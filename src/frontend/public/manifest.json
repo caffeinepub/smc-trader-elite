@@ -1,0 +1,19 @@
+{
+  "name": "SMC Trader Elite",
+  "short_name": "SMC Elite",
+  "description": "Premium Smart Money Concepts trading journal for professional traders",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#080b14",
+  "theme_color": "#080b14",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "lang": "en"
+}

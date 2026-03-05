@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Font Faces ──────────────────────────────────────────────────────── */
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque[opsz,wdth,wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree[wght].woff2") format("woff2");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Design Tokens ───────────────────────────────────────────────────── */
+
+@layer base {
+  :root {
+    /* Radius */
+    --radius: 0.875rem;
+
+    /* ── SMC Trader Elite: Deep dark trading theme ── */
+    --background:      0.1 0.008 255;     /* near-black deep navy */
+    --foreground:      0.94 0.008 240;    /* soft white */
+    --card:            0.135 0.012 255;   /* card surface */
+    --card-foreground: 0.94 0.008 240;
+    --popover:         0.15 0.012 255;
+    --popover-foreground: 0.94 0.008 240;
+
+    /* Primary = electric blue-white accent */
+    --primary:           0.88 0.05 240;
+    --primary-foreground: 0.1 0.008 255;
+
+    /* Secondary = muted navy card */
+    --secondary:           0.17 0.015 255;
+    --secondary-foreground: 0.78 0.015 240;
+
+    /* Muted */
+    --muted:           0.17 0.015 255;
+    --muted-foreground: 0.52 0.018 240;
+
+    /* Accent = subtle glow */
+    --accent:           0.2 0.018 255;
+    --accent-foreground: 0.88 0.015 240;
+
+    /* Semantic */
+    --destructive:           0.62 0.22 22;   /* red-500 */
+    --destructive-foreground: 0.97 0 0;
+
+    --border: 0.22 0.015 255;
+    --input:  0.18 0.015 255;
+    --ring:   0.55 0.08 240;
+
+    /* Charts */
+    --chart-1: 0.74 0.2 145;   /* emerald green = wins */
+    --chart-2: 0.62 0.22 22;   /* red = losses */
+    --chart-3: 0.6  0.15 240;  /* blue */
+    --chart-4: 0.78 0.14 60;   /* gold */
+    --chart-5: 0.65 0.1  280;  /* purple */
+
+    /* Semantic semantic-state colours */
+    --win:  0.74 0.2  145;
+    --loss: 0.62 0.22 22;
+    --be:   0.65 0.1  240;
+
+    /* Sidebar */
+    --sidebar:                    0.115 0.01 255;
+    --sidebar-foreground:         0.88 0.008 240;
+    --sidebar-primary:            0.74 0.2  145;
+    --sidebar-primary-foreground: 0.1  0    0;
+    --sidebar-accent:             0.17 0.015 255;
+    --sidebar-accent-foreground:  0.78 0.015 240;
+    --sidebar-border:             0.2  0.015 255;
+    --sidebar-ring:               0.55 0.08  240;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(var(--border));
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--muted-foreground));
+  }
+}
+
+/* ─── Utility classes ─────────────────────────────────────────────────── */
+@layer utilities {
+  .glass-card {
+    background: oklch(var(--card) / 0.8);
+    backdrop-filter: blur(24px) saturate(1.5);
+    border: 1px solid oklch(var(--border) / 0.6);
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.4),
+      0 4px 16px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg,
+      oklch(var(--card) / 0.9) 0%,
+      oklch(var(--secondary) / 0.7) 100%
+    );
+    border: 1px solid oklch(var(--border) / 0.5);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.35),
+      0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .win-text   { color: oklch(var(--win)); }
+  .loss-text  { color: oklch(var(--loss)); }
+  .be-text    { color: oklch(var(--be)); }
+
+  .win-badge  { background: oklch(var(--win) / 0.15); color: oklch(var(--win)); border: 1px solid oklch(var(--win) / 0.3); }
+  .loss-badge { background: oklch(var(--loss) / 0.15); color: oklch(var(--loss)); border: 1px solid oklch(var(--loss) / 0.3); }
+  .be-badge   { background: oklch(var(--be) / 0.15); color: oklch(var(--be)); border: 1px solid oklch(var(--be) / 0.3); }
+
+  .nav-glow {
+    box-shadow: 0 0 12px oklch(var(--win) / 0.3), 0 2px 4px rgba(0,0,0,0.4);
+  }
+
+  .chart-gradient {
+    background: linear-gradient(180deg,
+      oklch(var(--chart-1) / 0.2) 0%,
+      oklch(var(--chart-1) / 0.0) 100%
+    );
+  }
+}
+
+/* ─── Animations ──────────────────────────────────────────────────────── */
+@layer utilities {
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 8px oklch(var(--win) / 0.3); }
+    50%       { box-shadow: 0 0 20px oklch(var(--win) / 0.6); }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .animate-slide-up { animation: slide-up 0.35s ease-out both; }
+  .animate-fade-in  { animation: fade-in 0.3s ease-out both; }
+  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+  @keyframes accordion-down {
+    from { height: 0; }
+    to   { height: var(--radix-accordion-content-height); }
+  }
+  @keyframes accordion-up {
+    from { height: var(--radix-accordion-content-height); }
+    to   { height: 0; }
+  }
+  .animate-accordion-down { animation: accordion-down 0.2s ease-out; }
+  .animate-accordion-up   { animation: accordion-up 0.2s ease-out; }
+}
