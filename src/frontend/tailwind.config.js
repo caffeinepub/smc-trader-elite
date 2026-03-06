@@ -19,6 +19,8 @@ export default {
         display: ["Bricolage Grotesque", "system-ui", "sans-serif"],
         body:    ["Figtree", "system-ui", "sans-serif"],
         mono:    ["Geist Mono", "monospace"],
+        geometric: ["Outfit", "system-ui", "sans-serif"],
+        serif:   ["Playfair Display", "Georgia", "serif"],
       },
       colors: {
         border: "oklch(var(--border))",

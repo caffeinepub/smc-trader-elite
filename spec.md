@@ -2,53 +2,81 @@
 
 ## Current State
 
-Full-stack trading journal with:
+The app is a full-stack trading journal with:
 - Authentication via Internet Identity
-- User profile setup
-- Journal: log trades (pair, entry, SL, TP, RR, result, emotion, notes) with view/edit/delete
-- Playbook: pre-trade checklist with view/edit/delete
-- Dashboard: equity curve, performance stats
-- Trade History: filterable trade list
-- Risk Calculator: position sizing
-- Performance analytics
+- User profile setup (display name, trading style, currency, bio)
+- Dashboard with equity curve and stats cards
+- Playbook: pre-trade checklist (fixed fields: pair, session, HTF bias, market structure, liquidity target, POI, entry confirmation, RR target, quality score)
+- Journal: trade entry form (date, pair, type, entry/SL/TP, RR, result, emotion, notes, screenshot)
+- Trade History: filterable trade list with detail/edit sheets
+- Risk Calculator: instrument selector, entry/SL inputs, position size and TP outputs
+- Performance: analytics charts, equity curve, win rate, avg RR, profit factor
+- Navigation: bottom tab (mobile) + sidebar (desktop)
 
-Backend `Trade` model fields: id, owner, date, pair, tradeType, entryPrice, stopLoss, takeProfit, rrAchieved, result, emotion, notes, screenshotFileId
+Backend entities: `Trade`, `PlaybookEntry`, `UserProfile`
 
 ## Requested Changes (Diff)
 
 ### Add
-- `entryTimeframe` (Text) field to the `Trade` backend model
-- `tradeTime` (Text) field to the `Trade` backend model (time of trade entry, separate from date)
-- A **TradingView Integration** panel in the Journal page — a dedicated URL-parameter-based auto-fill system:
-  - The app reads URL query parameters (`?symbol=EURUSD&entry=1.08500&sl=1.08200&tp=1.09100&rr=2.5&timeframe=1H&time=14:30`) when the Journal page loads and auto-fills the corresponding form fields
-  - Fields auto-filled from URL params (shown as "locked" with a TradingView badge): Instrument/Pair, Entry Price, Stop Loss, Take Profit, RR, Entry Timeframe, Trade Time
-  - Fields that remain manually entered: Date, Trade Type, Result, Emotion, Notes
-  - A "TradingView Setup Guide" section in Journal that explains how to configure TradingView alerts to send the webhook URL with the correct parameters, with copy-to-clipboard for the alert message template
-  - A visual indicator on auto-filled fields showing they were populated from TradingView (green TV badge icon)
-  - Auto-filled fields can still be edited by the user (they're pre-populated, not locked)
-  - The Journal form should detect if URL params are present and show a "TradingView data loaded" banner at the top of the form
-  - A dedicated "TV Extension" tab/button in the Journal that shows the integration setup guide
+
+1. **Settings Panel** (new nav tab + page)
+   - Theme selector: Dark, Light, System, Mixed/Hybrid
+   - Primary color picker (accent color, 8 preset OKLCH swatches + custom)
+   - Secondary color picker
+   - Font selector: SF Pro style, Inter, Mono, Serif (4 options)
+   - Animation toggle: Full / Reduced / None
+   - Settings persisted in localStorage (no backend needed)
+   - Apply theme/color changes to CSS custom properties in real-time
+
+2. **Strategy Sharing** (new nav tab + page)
+   - Users can publish a "Proven Strategy" card when they have >= 3 months of trades and a profitable track record
+   - Strategy card fields: strategy name, entry model description, market context, timeframes used, overall trade summary (total trades, wins, losses, win rate auto-calculated from their journal), shareable link/code
+   - Strategy is stored in backend as a new `Strategy` type
+   - All users can browse published strategies from others (public read)
+   - Strategy cards show: author display name, win rate badge, total trades, profit factor, RR avg, entry model summary, market context, "Follow" button
+   - Min 3 months threshold enforced on frontend (check earliest trade date)
+
+3. **Custom Playbook Builder** (extend existing Playbook page with a "Create Custom" tab)
+   - Users can create fully custom playbook templates with their own fields
+   - Sections they can add/configure: Asset & Session, Market Context, Entry Model, Targets & Quality
+   - Each section can have custom field labels and free-text/select input types
+   - Custom playbook templates stored in backend as `CustomPlaybook` type
+   - Saved templates appear alongside standard playbook entries
+   - Users can use a saved custom template to fill in and log a playbook entry
+
+4. **Trader Network** (new nav tab + page)
+   - Follow/unfollow other traders by their Principal ID or username
+   - Following feed: see recently shared playbook entries and strategies from followed traders
+   - User profile cards with: display name, trading style, win rate, total trades, follow button
+   - "Discover" tab: browse all users who have a public profile
+   - "Following" tab: feed from followed users
+   - Backend: `Follow` relationship type, query for followers/following, public profile listing
 
 ### Modify
-- `createTrade` backend function: add `entryTimeframe` and `tradeTime` parameters
-- `updateTrade` backend function: handle new fields
-- Journal form: add `entryTimeframe` select (M1, M5, M15, M30, H1, H4, D1, W1) and `tradeTime` time input
-- Journal view/edit sheet: show entryTimeframe and tradeTime fields
-- Trade type shown in history and detail views should show entryTimeframe
+
+- Navigation: add "Settings", "Strategies", "Network" tabs (total 9 tabs — reorganize sidebar/bottom nav for overflow, use icon-only labels on mobile or a "More" overflow menu)
+- `getUserProfile` on backend: remove admin-only restriction so any authenticated user can view any public profile
+- Existing Playbook page: add "Custom" tab alongside standard playbook list
 
 ### Remove
+
 - Nothing removed
 
 ## Implementation Plan
 
-1. Update `main.mo` backend: add `entryTimeframe: Text` and `tradeTime: Text` to Trade type; update createTrade and updateTrade function signatures
-2. Regenerate `backend.d.ts` bindings (via generate_motoko_code)
-3. Update Journal.tsx:
-   - Add `entryTimeframe` and `tradeTime` to defaultForm and editForm state
-   - Add timeframe select and time input to the form
-   - Add URL parameter detection hook (reads on mount, auto-fills form, clears URL params)
-   - Show "TradingView data loaded" success banner when URL params detected
-   - Add TradingView badge on auto-filled fields
-   - Add "Integration Guide" collapsible section with Pine Script alert message template and copyable webhook URL format
-4. Update view/edit sheet in Journal to display new fields
-5. Update TradeHistory cards to show timeframe badge
+### Backend (Motoko)
+
+1. Add `Strategy` type: id, owner, name, entryModelDescription, marketContext, timeframes, isPublic, createdAt; CRUD + `getPublicStrategies()` + `getAllStrategies()` for owner
+2. Add `CustomPlaybook` type: id, owner, name, sections (array of {sectionType, fieldLabel, fieldType, value}), createdAt; CRUD for owner
+3. Add `Follow` type: follower Principal, followee Principal; `followUser`, `unfollowUser`, `getFollowers`, `getFollowing`, `isFollowing`
+4. Add `getPublicProfiles()` — returns all profiles with their Principal so network discover works
+5. Relax `getUserProfile` to allow any authenticated user to read any profile
+
+### Frontend
+
+1. **SettingsContext**: React context providing theme, primaryColor, secondaryColor, font, animationLevel — apply to `document.documentElement` CSS vars; persist to localStorage
+2. **Settings page**: UI for all appearance settings with live preview
+3. **Strategies page**: list of public strategies from all users + form to publish own strategy (gated by 3-month profitable check)
+4. **Custom Playbook tab** on Playbook page: template builder UI with draggable/addable sections
+5. **Network page**: Discover tab (all public profiles + follow button), Following tab (feed of followed users' playbook entries and strategies)
+6. **Nav update**: add Settings (gear icon), Strategies (star icon), Network (users icon) to sidebar and bottom nav

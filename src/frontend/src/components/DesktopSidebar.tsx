@@ -4,12 +4,15 @@ import {
   Calculator,
   History,
   LayoutDashboard,
+  Network,
   PenLine,
+  Settings,
+  Star,
 } from "lucide-react";
 import { motion } from "motion/react";
 import type { NavTab } from "../App";
 
-const navItems: {
+const primaryNavItems: {
   id: NavTab;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -20,11 +23,60 @@ const navItems: {
   { id: "history", label: "Trade History", icon: History },
   { id: "calculator", label: "Risk Calc", icon: Calculator },
   { id: "performance", label: "Performance", icon: BarChart3 },
+  { id: "strategies", label: "Strategies", icon: Star },
+  { id: "network", label: "Network", icon: Network },
 ];
+
+const settingsItem = {
+  id: "settings" as NavTab,
+  label: "Settings",
+  icon: Settings,
+};
 
 interface Props {
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
+}
+
+function NavItem({
+  id,
+  label,
+  icon: Icon,
+  isActive,
+  onClick,
+}: {
+  id: NavTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      key={id}
+      data-ocid={`nav.${id}.link`}
+      onClick={onClick}
+      whileTap={{ scale: 0.97 }}
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium transition-all duration-200 relative ${
+        isActive
+          ? "text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+      }`}
+    >
+      {isActive && (
+        <motion.div
+          layoutId="sidebar-active"
+          className="absolute inset-0 rounded-xl bg-gradient-to-r from-win/10 to-win/5 border border-win/20"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+        />
+      )}
+      <Icon className={`w-4 h-4 relative z-10 ${isActive ? "text-win" : ""}`} />
+      <span className="relative z-10">{label}</span>
+      {isActive && (
+        <div className="ml-auto relative z-10 w-1.5 h-1.5 rounded-full bg-win" />
+      )}
+    </motion.button>
+  );
 }
 
 export default function DesktopSidebar({ activeTab, onTabChange }: Props) {
@@ -50,39 +102,28 @@ export default function DesktopSidebar({ activeTab, onTabChange }: Props) {
       </div>
 
       {/* Nav Items */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
-          return (
-            <motion.button
-              key={item.id}
-              data-ocid={`nav.${item.id}.link`}
-              onClick={() => onTabChange(item.id)}
-              whileTap={{ scale: 0.97 }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-body font-medium transition-all duration-200 relative ${
-                isActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
-              }`}
-            >
-              {isActive && (
-                <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute inset-0 rounded-xl bg-gradient-to-r from-win/10 to-win/5 border border-win/20"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
-                />
-              )}
-              <Icon
-                className={`w-4 h-4 relative z-10 ${isActive ? "text-win" : ""}`}
-              />
-              <span className="relative z-10">{item.label}</span>
-              {isActive && (
-                <div className="ml-auto relative z-10 w-1.5 h-1.5 rounded-full bg-win" />
-              )}
-            </motion.button>
-          );
-        })}
+      <nav className="flex-1 px-3 py-4 overflow-y-auto space-y-0.5">
+        {primaryNavItems.map((item) => (
+          <NavItem
+            key={item.id}
+            id={item.id}
+            label={item.label}
+            icon={item.icon}
+            isActive={activeTab === item.id}
+            onClick={() => onTabChange(item.id)}
+          />
+        ))}
+
+        {/* Divider before Settings */}
+        <div className="my-2 mx-1 h-px bg-border/40" />
+
+        <NavItem
+          id={settingsItem.id}
+          label={settingsItem.label}
+          icon={settingsItem.icon}
+          isActive={activeTab === settingsItem.id}
+          onClick={() => onTabChange(settingsItem.id)}
+        />
       </nav>
 
       {/* Footer */}

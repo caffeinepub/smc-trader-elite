@@ -17,14 +17,21 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   BookOpen,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Edit2,
+  Eye,
   Loader2,
   Plus,
   Trash2,
   Upload,
+  Wrench,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -37,6 +44,564 @@ import {
   useDeletePlaybookEntry,
   useUpdatePlaybookEntry,
 } from "../hooks/useQueries";
+
+// ─── Custom Playbook Types & Helpers ─────────────────────────────────────────
+
+const CUSTOM_STORAGE_KEY = "smc-custom-playbooks";
+
+interface CustomField {
+  label: string;
+  value: string;
+}
+
+interface CustomPlaybook {
+  id: string;
+  name: string;
+  assetSession: string;
+  marketContext: string;
+  entryModel: string;
+  targetsQuality: string;
+  customFields: CustomField[];
+  createdAt: number;
+}
+
+function loadCustomPlaybooks(): CustomPlaybook[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as CustomPlaybook[];
+  } catch {}
+  return [];
+}
+
+function saveCustomPlaybooks(items: CustomPlaybook[]) {
+  try {
+    localStorage.setItem(CUSTOM_STORAGE_KEY, JSON.stringify(items));
+  } catch {}
+}
+
+function useCustomPlaybooks() {
+  const [items, setItems] = useState<CustomPlaybook[]>(() =>
+    loadCustomPlaybooks(),
+  );
+
+  const save = (item: Omit<CustomPlaybook, "id" | "createdAt">) => {
+    const newItem: CustomPlaybook = {
+      ...item,
+      id: crypto.randomUUID(),
+      createdAt: Date.now(),
+    };
+    const next = [...loadCustomPlaybooks(), newItem];
+    saveCustomPlaybooks(next);
+    setItems(next);
+    return newItem;
+  };
+
+  const remove = (id: string) => {
+    const next = loadCustomPlaybooks().filter((i) => i.id !== id);
+    saveCustomPlaybooks(next);
+    setItems(next);
+  };
+
+  return { items, save, remove };
+}
+
+// ─── Collapsible Section ──────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        border: "1px solid oklch(var(--border) / 0.4)",
+        background: "oklch(var(--muted) / 0.2)",
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-accent/20 transition-colors"
+      >
+        <span className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wider">
+          {title}
+        </span>
+        {open ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground/60" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground/60" />
+        )}
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </div>
+  );
+}
+
+// ─── Custom Builder Tab ───────────────────────────────────────────────────────
+
+function CustomBuilderTab() {
+  const { items, save, remove } = useCustomPlaybooks();
+  const [viewItem, setViewItem] = useState<CustomPlaybook | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+
+  const defaultForm = {
+    name: "",
+    assetSession: "",
+    marketContext: "",
+    entryModel: "",
+    targetsQuality: "",
+    customFields: [] as CustomField[],
+  };
+
+  const [form, setForm] = useState(defaultForm);
+
+  const addCustomField = () => {
+    setForm((p) => ({
+      ...p,
+      customFields: [...p.customFields, { label: "", value: "" }],
+    }));
+  };
+
+  const updateCustomField = (
+    i: number,
+    key: keyof CustomField,
+    val: string,
+  ) => {
+    setForm((p) => {
+      const next = [...p.customFields];
+      next[i] = { ...next[i], [key]: val };
+      return { ...p, customFields: next };
+    });
+  };
+
+  const removeCustomField = (i: number) => {
+    setForm((p) => ({
+      ...p,
+      customFields: p.customFields.filter((_, idx) => idx !== i),
+    }));
+  };
+
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      toast.error("Template name is required");
+      return;
+    }
+    save({
+      name: form.name.trim(),
+      assetSession: form.assetSession.trim(),
+      marketContext: form.marketContext.trim(),
+      entryModel: form.entryModel.trim(),
+      targetsQuality: form.targetsQuality.trim(),
+      customFields: form.customFields.filter(
+        (f) => f.label.trim() || f.value.trim(),
+      ),
+    });
+    toast.success("Custom playbook template saved!");
+    setForm(defaultForm);
+  };
+
+  const formatDate = (ts: number) =>
+    new Date(ts).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+  return (
+    <div className="space-y-6">
+      {/* ── Create Form */}
+      <motion.form
+        onSubmit={handleSave}
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="glass-card rounded-2xl p-5 space-y-4"
+        data-ocid="custom_playbook.form.section"
+      >
+        <h2 className="text-sm font-display font-semibold text-foreground flex items-center gap-2">
+          <Wrench className="w-4 h-4 text-win" />
+          Create Custom Template
+        </h2>
+
+        {/* Name */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground font-body uppercase tracking-wider">
+            Template Name <span className="text-loss">*</span>
+          </Label>
+          <Input
+            data-ocid="custom_playbook.name.input"
+            placeholder="e.g. Gold OB Scalp, NASDAQ FVG Model…"
+            value={form.name}
+            onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+            className="h-11 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body"
+          />
+        </div>
+
+        {/* Asset & Session */}
+        <CollapsibleSection title="Asset & Session" defaultOpen>
+          <Textarea
+            data-ocid="custom_playbook.asset_session.textarea"
+            placeholder="Asset, trading session, timing, correlation notes…"
+            value={form.assetSession}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, assetSession: e.target.value }))
+            }
+            rows={3}
+            className="mt-2 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body resize-none"
+          />
+        </CollapsibleSection>
+
+        {/* Market Context */}
+        <CollapsibleSection title="Market Context">
+          <Textarea
+            data-ocid="custom_playbook.market_context.textarea"
+            placeholder="HTF bias, market structure, liquidity, session context…"
+            value={form.marketContext}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, marketContext: e.target.value }))
+            }
+            rows={3}
+            className="mt-2 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body resize-none"
+          />
+        </CollapsibleSection>
+
+        {/* Entry Model */}
+        <CollapsibleSection title="Entry Model">
+          <Textarea
+            data-ocid="custom_playbook.entry_model.textarea"
+            placeholder="POI, confirmation, entry type, timeframe confirmation…"
+            value={form.entryModel}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, entryModel: e.target.value }))
+            }
+            rows={3}
+            className="mt-2 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body resize-none"
+          />
+        </CollapsibleSection>
+
+        {/* Targets & Quality */}
+        <CollapsibleSection title="Targets & Quality">
+          <Textarea
+            data-ocid="custom_playbook.targets.textarea"
+            placeholder="RR target, TP levels, SL placement, quality criteria…"
+            value={form.targetsQuality}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, targetsQuality: e.target.value }))
+            }
+            rows={3}
+            className="mt-2 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body resize-none"
+          />
+        </CollapsibleSection>
+
+        {/* Custom Fields */}
+        {form.customFields.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="text-xs font-body font-semibold text-muted-foreground uppercase tracking-wider">
+              Custom Fields
+            </h4>
+            {form.customFields.map((field, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: custom fields list is user-managed, index is stable during editing
+              <div key={i} className="flex items-center gap-2">
+                <Input
+                  placeholder="Field label"
+                  value={field.label}
+                  onChange={(e) =>
+                    updateCustomField(i, "label", e.target.value)
+                  }
+                  className="flex-1 h-9 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body text-sm"
+                />
+                <Input
+                  placeholder="Value"
+                  value={field.value}
+                  onChange={(e) =>
+                    updateCustomField(i, "value", e.target.value)
+                  }
+                  className="flex-1 h-9 rounded-xl bg-input/50 border-border/50 focus:border-win/50 font-body text-sm"
+                />
+                <Button
+                  type="button"
+                  data-ocid="custom_playbook.field.delete_button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => removeCustomField(i)}
+                  className="h-9 w-9 p-0 rounded-xl text-muted-foreground/60 hover:text-loss hover:bg-loss/10 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Add Custom Field */}
+        <Button
+          type="button"
+          data-ocid="custom_playbook.add_field.button"
+          variant="ghost"
+          onClick={addCustomField}
+          className="w-full h-9 rounded-xl font-body text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-all border border-dashed border-border/40 gap-2"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Add Custom Field
+        </Button>
+
+        <Button
+          type="submit"
+          data-ocid="custom_playbook.save.button"
+          className="w-full h-11 rounded-xl font-display font-semibold text-sm"
+          style={{
+            background:
+              "linear-gradient(135deg, oklch(var(--win)) 0%, oklch(var(--win) / 0.7) 100%)",
+            color: "oklch(0.1 0.008 255)",
+            border: "none",
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Save Template
+        </Button>
+      </motion.form>
+
+      {/* ── Saved Templates */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        <h2 className="text-sm font-display font-semibold text-foreground mb-3 flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-win" />
+          Saved Templates
+          {items.length > 0 && (
+            <span className="text-xs text-muted-foreground font-body ml-1">
+              ({items.length})
+            </span>
+          )}
+        </h2>
+
+        <AnimatePresence mode="popLayout">
+          {items.length === 0 ? (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              data-ocid="custom_playbook.empty_state"
+              className="glass-card rounded-2xl p-8 text-center"
+            >
+              <Wrench className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                No custom templates yet
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">
+                Create your first template above
+              </p>
+            </motion.div>
+          ) : (
+            <div className="space-y-3">
+              {items.map((item, idx) => {
+                const markerIdx = idx + 1;
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ delay: Math.min(idx * 0.05, 0.25) }}
+                    data-ocid={
+                      markerIdx <= 3
+                        ? `custom_playbook.item.${markerIdx}`
+                        : undefined
+                    }
+                    className="glass-card rounded-2xl p-4 hover:border-win/20 transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-display font-semibold text-foreground text-sm truncate">
+                          {item.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground font-body mt-0.5">
+                          {formatDate(item.createdAt)}
+                        </div>
+                        {item.entryModel && (
+                          <p className="text-xs text-muted-foreground/70 font-body mt-1.5 line-clamp-2">
+                            {item.entryModel}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                        <Button
+                          type="button"
+                          data-ocid={
+                            markerIdx <= 3
+                              ? `custom_playbook.use.button.${markerIdx}`
+                              : undefined
+                          }
+                          size="sm"
+                          onClick={() => {
+                            setViewItem(item);
+                            setViewOpen(true);
+                          }}
+                          className="h-8 px-3 rounded-xl text-xs font-body font-semibold"
+                          style={{
+                            background: "oklch(var(--win) / 0.1)",
+                            color: "oklch(var(--win))",
+                            border: "1px solid oklch(var(--win) / 0.2)",
+                          }}
+                        >
+                          <Eye className="w-3.5 h-3.5 mr-1" />
+                          Use
+                        </Button>
+                        <Button
+                          type="button"
+                          data-ocid={
+                            markerIdx <= 3
+                              ? `custom_playbook.delete_button.${markerIdx}`
+                              : undefined
+                          }
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            remove(item.id);
+                            toast.success("Template deleted");
+                          }}
+                          className="h-8 w-8 p-0 rounded-xl text-muted-foreground/60 hover:text-loss hover:bg-loss/10 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ── Template Detail Sheet */}
+      <Sheet open={viewOpen} onOpenChange={(v) => !v && setViewOpen(false)}>
+        <SheetContent
+          data-ocid="custom_playbook.dialog"
+          className="w-full sm:max-w-lg overflow-y-auto flex flex-col"
+          style={{
+            background: "oklch(var(--card) / 0.97)",
+            backdropFilter: "blur(40px)",
+            borderLeft: "1px solid oklch(var(--border) / 0.5)",
+          }}
+        >
+          {viewItem && (
+            <>
+              <SheetHeader className="shrink-0 pb-4 border-b border-border/30">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{
+                      background: "oklch(var(--win) / 0.12)",
+                      border: "1px solid oklch(var(--win) / 0.25)",
+                    }}
+                  >
+                    <Wrench className="w-5 h-5 text-win" />
+                  </div>
+                  <div>
+                    <SheetTitle className="text-foreground font-display text-base leading-tight">
+                      {viewItem.name}
+                    </SheetTitle>
+                    <SheetDescription className="text-muted-foreground text-xs font-body mt-0.5">
+                      Custom Playbook Template
+                    </SheetDescription>
+                  </div>
+                </div>
+              </SheetHeader>
+
+              <div className="flex-1 py-4 space-y-4">
+                {[
+                  {
+                    label: "Asset & Session",
+                    value: viewItem.assetSession,
+                  },
+                  { label: "Market Context", value: viewItem.marketContext },
+                  { label: "Entry Model", value: viewItem.entryModel },
+                  {
+                    label: "Targets & Quality",
+                    value: viewItem.targetsQuality,
+                  },
+                ]
+                  .filter((s) => s.value)
+                  .map((section) => (
+                    <div
+                      key={section.label}
+                      className="rounded-xl p-4"
+                      style={{
+                        background: "oklch(var(--muted) / 0.25)",
+                        border: "1px solid oklch(var(--border) / 0.3)",
+                      }}
+                    >
+                      <h4 className="text-[10px] font-body font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                        {section.label}
+                      </h4>
+                      <p className="text-sm text-foreground font-body leading-relaxed whitespace-pre-wrap">
+                        {section.value}
+                      </p>
+                    </div>
+                  ))}
+
+                {viewItem.customFields.filter((f) => f.label || f.value)
+                  .length > 0 && (
+                  <div
+                    className="rounded-xl p-4"
+                    style={{
+                      background: "oklch(var(--muted) / 0.25)",
+                      border: "1px solid oklch(var(--border) / 0.3)",
+                    }}
+                  >
+                    <h4 className="text-[10px] font-body font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                      Custom Fields
+                    </h4>
+                    <div className="space-y-2">
+                      {viewItem.customFields
+                        .filter((f) => f.label || f.value)
+                        .map((f) => (
+                          <div
+                            key={`${f.label}-${f.value}`}
+                            className="flex items-start justify-between gap-3 py-1.5 border-b border-border/20 last:border-0"
+                          >
+                            <span className="text-xs font-body text-muted-foreground shrink-0 w-32">
+                              {f.label || "—"}
+                            </span>
+                            <span className="text-sm font-body text-foreground text-right flex-1">
+                              {f.value || "—"}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="shrink-0 pt-4 border-t border-border/30">
+                <Button
+                  data-ocid="custom_playbook.close.button"
+                  onClick={() => setViewOpen(false)}
+                  variant="ghost"
+                  className="w-full h-10 rounded-xl font-body text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 transition-colors"
+                >
+                  Close
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -101,7 +666,7 @@ function ViewField({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function Playbook() {
+function StandardPlaybookTab() {
   const [form, setForm] = useState(defaultForm);
 
   // ── Sheet state
@@ -228,24 +793,7 @@ export default function Playbook() {
   };
 
   return (
-    <section
-      data-ocid="playbook.section"
-      className="p-4 md:p-6 space-y-6 animate-fade-in max-w-2xl"
-    >
-      {/* ── Page Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground tracking-tight">
-          Playbook
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1 font-body">
-          Pre-trade checklist — validate your setup before entering
-        </p>
-      </motion.div>
-
+    <div className="space-y-6">
       {/* ── New Setup Form */}
       <motion.form
         onSubmit={handleSubmit}
@@ -954,6 +1502,67 @@ export default function Playbook() {
           )}
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+// ─── Main Exported Component ──────────────────────────────────────────────────
+
+export default function Playbook() {
+  return (
+    <section
+      data-ocid="playbook.section"
+      className="p-4 md:p-6 space-y-6 animate-fade-in max-w-2xl"
+    >
+      {/* Page Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground tracking-tight">
+          Playbook
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1 font-body">
+          Pre-trade checklist & custom entry model builder
+        </p>
+      </motion.div>
+
+      {/* Tabs */}
+      <Tabs defaultValue="standard" className="w-full">
+        <TabsList
+          className="w-full grid grid-cols-2 rounded-xl h-10"
+          style={{
+            background: "oklch(var(--muted) / 0.4)",
+            border: "1px solid oklch(var(--border) / 0.4)",
+          }}
+        >
+          <TabsTrigger
+            value="standard"
+            data-ocid="playbook.standard.tab"
+            className="rounded-lg text-sm font-body font-medium data-[state=active]:bg-win data-[state=active]:text-background transition-all"
+          >
+            <BookOpen className="w-3.5 h-3.5 mr-2" />
+            Standard
+          </TabsTrigger>
+          <TabsTrigger
+            value="custom"
+            data-ocid="playbook.custom.tab"
+            className="rounded-lg text-sm font-body font-medium data-[state=active]:bg-win data-[state=active]:text-background transition-all"
+          >
+            <Wrench className="w-3.5 h-3.5 mr-2" />
+            Custom Builder
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="standard" className="mt-4">
+          <StandardPlaybookTab />
+        </TabsContent>
+
+        <TabsContent value="custom" className="mt-4">
+          <CustomBuilderTab />
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }

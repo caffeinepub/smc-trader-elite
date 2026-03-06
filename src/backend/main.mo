@@ -12,9 +12,9 @@ import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   type TradeId = Nat;
   type PlaybookEntryId = Nat;

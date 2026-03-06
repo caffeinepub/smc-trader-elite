@@ -28,6 +28,22 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Outfit";
+  src: url("/assets/fonts/Outfit[wght].woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/assets/fonts/PlayfairDisplay[wght].woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ─── Design Tokens ───────────────────────────────────────────────────── */
 
 @layer base {
@@ -161,6 +177,24 @@
       oklch(var(--chart-1) / 0.2) 0%,
       oklch(var(--chart-1) / 0.0) 100%
     );
+  }
+}
+
+/* ─── Animation control classes ──────────────────────────────────────── */
+@layer utilities {
+  html.no-animation *,
+  html.no-animation *::before,
+  html.no-animation *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html.reduced-animation *,
+  html.reduced-animation *::before,
+  html.reduced-animation *::after {
+    animation-duration: 0.15s !important;
+    transition-duration: 0.15s !important;
   }
 }
 
