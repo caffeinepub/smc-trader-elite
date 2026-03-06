@@ -36,6 +36,8 @@ export const TradeResult = IDL.Variant({
   'win' : IDL.Null,
   'loss' : IDL.Null,
 });
+export const Timeframe = IDL.Text;
+export const TradeTime = IDL.Text;
 export const TradeId = IDL.Nat;
 export const PlaybookEntry = IDL.Record({
   'id' : PlaybookEntryId,
@@ -55,6 +57,7 @@ export const Trade = IDL.Record({
   'id' : TradeId,
   'result' : TradeResult,
   'screenshotFileId' : IDL.Opt(IDL.Text),
+  'tradeTime' : TradeTime,
   'tradeType' : TradeType,
   'emotion' : IDL.Text,
   'owner' : IDL.Principal,
@@ -64,6 +67,7 @@ export const Trade = IDL.Record({
   'rrAchieved' : IDL.Float64,
   'stopLoss' : IDL.Float64,
   'notes' : IDL.Text,
+  'entryTimeframe' : Timeframe,
   'entryPrice' : IDL.Float64,
 });
 export const UserProfile = IDL.Record({
@@ -136,6 +140,8 @@ export const idlService = IDL.Service({
         IDL.Text,
         IDL.Text,
         IDL.Opt(IDL.Text),
+        Timeframe,
+        TradeTime,
       ],
       [TradeId],
       [],
@@ -199,6 +205,8 @@ export const idlFactory = ({ IDL }) => {
     'win' : IDL.Null,
     'loss' : IDL.Null,
   });
+  const Timeframe = IDL.Text;
+  const TradeTime = IDL.Text;
   const TradeId = IDL.Nat;
   const PlaybookEntry = IDL.Record({
     'id' : PlaybookEntryId,
@@ -218,6 +226,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : TradeId,
     'result' : TradeResult,
     'screenshotFileId' : IDL.Opt(IDL.Text),
+    'tradeTime' : TradeTime,
     'tradeType' : TradeType,
     'emotion' : IDL.Text,
     'owner' : IDL.Principal,
@@ -227,6 +236,7 @@ export const idlFactory = ({ IDL }) => {
     'rrAchieved' : IDL.Float64,
     'stopLoss' : IDL.Float64,
     'notes' : IDL.Text,
+    'entryTimeframe' : Timeframe,
     'entryPrice' : IDL.Float64,
   });
   const UserProfile = IDL.Record({
@@ -299,6 +309,8 @@ export const idlFactory = ({ IDL }) => {
           IDL.Text,
           IDL.Text,
           IDL.Opt(IDL.Text),
+          Timeframe,
+          TradeTime,
         ],
         [TradeId],
         [],

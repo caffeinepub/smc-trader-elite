@@ -89,19 +89,20 @@ export class ExternalBlob {
         return this;
     }
 }
-export type PlaybookEntryId = bigint;
+export interface _CaffeineStorageRefillResult {
+    success?: boolean;
+    topped_up_amount?: bigint;
+}
+export type TradeTime = string;
 export interface _CaffeineStorageRefillInformation {
     proposed_top_up_amount?: bigint;
 }
 export type TradeId = bigint;
-export interface _CaffeineStorageCreateCertificateResult {
-    method: string;
-    blob_hash: string;
-}
 export interface Trade {
     id: TradeId;
     result: TradeResult;
     screenshotFileId?: string;
+    tradeTime: TradeTime;
     tradeType: TradeType;
     emotion: string;
     owner: Principal;
@@ -111,7 +112,12 @@ export interface Trade {
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: Timeframe;
     entryPrice: number;
+}
+export interface _CaffeineStorageCreateCertificateResult {
+    method: string;
+    blob_hash: string;
 }
 export interface PlaybookEntry {
     id: PlaybookEntryId;
@@ -127,6 +133,7 @@ export interface PlaybookEntry {
     rrTarget: number;
     entryConfirmation: string;
 }
+export type Timeframe = string;
 export interface UserProfile {
     bio: string;
     tradingStyle: string;
@@ -134,10 +141,7 @@ export interface UserProfile {
     createdAt: bigint;
     accountCurrency: string;
 }
-export interface _CaffeineStorageRefillResult {
-    success?: boolean;
-    topped_up_amount?: bigint;
-}
+export type PlaybookEntryId = bigint;
 export enum Session {
     ny = "ny",
     asia = "asia",
@@ -172,7 +176,7 @@ export interface backendInterface {
     calculateWinRate(): Promise<number>;
     countTradeResults(): Promise<[bigint, bigint, bigint]>;
     createPlaybookEntry(pair: string, session: Session, htfBias: string, marketStructure: string, liquidityTarget: string, poi: string, entryConfirmation: string, rrTarget: number, qualityScore: bigint): Promise<PlaybookEntryId>;
-    createTrade(date: string, pair: string, tradeType: TradeType, entryPrice: number, stopLoss: number, takeProfit: number, rrAchieved: number, result: TradeResult, emotion: string, notes: string, screenshotFileId: string | null): Promise<TradeId>;
+    createTrade(date: string, pair: string, tradeType: TradeType, entryPrice: number, stopLoss: number, takeProfit: number, rrAchieved: number, result: TradeResult, emotion: string, notes: string, screenshotFileId: string | null, entryTimeframe: Timeframe, tradeTime: TradeTime): Promise<TradeId>;
     deletePlaybookEntry(id: PlaybookEntryId): Promise<void>;
     deleteTrade(id: TradeId): Promise<void>;
     getAllPlaybookEntries(): Promise<Array<PlaybookEntry>>;
@@ -196,7 +200,7 @@ export interface backendInterface {
     updatePlaybookEntry(entry: PlaybookEntry): Promise<void>;
     updateTrade(trade: Trade): Promise<void>;
 }
-import type { PlaybookEntry as _PlaybookEntry, PlaybookEntryId as _PlaybookEntryId, Session as _Session, Trade as _Trade, TradeId as _TradeId, TradeResult as _TradeResult, TradeType as _TradeType, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
+import type { PlaybookEntry as _PlaybookEntry, PlaybookEntryId as _PlaybookEntryId, Session as _Session, Timeframe as _Timeframe, Trade as _Trade, TradeId as _TradeId, TradeResult as _TradeResult, TradeTime as _TradeTime, TradeType as _TradeType, UserProfile as _UserProfile, UserRole as _UserRole, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
     async _caffeineStorageBlobIsLive(arg0: Uint8Array): Promise<boolean> {
@@ -403,17 +407,17 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async createTrade(arg0: string, arg1: string, arg2: TradeType, arg3: number, arg4: number, arg5: number, arg6: number, arg7: TradeResult, arg8: string, arg9: string, arg10: string | null): Promise<TradeId> {
+    async createTrade(arg0: string, arg1: string, arg2: TradeType, arg3: number, arg4: number, arg5: number, arg6: number, arg7: TradeResult, arg8: string, arg9: string, arg10: string | null, arg11: Timeframe, arg12: TradeTime): Promise<TradeId> {
         if (this.processError) {
             try {
-                const result = await this.actor.createTrade(arg0, arg1, to_candid_TradeType_n12(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, to_candid_TradeResult_n14(this._uploadFile, this._downloadFile, arg7), arg8, arg9, to_candid_opt_n16(this._uploadFile, this._downloadFile, arg10));
+                const result = await this.actor.createTrade(arg0, arg1, to_candid_TradeType_n12(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, to_candid_TradeResult_n14(this._uploadFile, this._downloadFile, arg7), arg8, arg9, to_candid_opt_n16(this._uploadFile, this._downloadFile, arg10), arg11, arg12);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.createTrade(arg0, arg1, to_candid_TradeType_n12(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, to_candid_TradeResult_n14(this._uploadFile, this._downloadFile, arg7), arg8, arg9, to_candid_opt_n16(this._uploadFile, this._downloadFile, arg10));
+            const result = await this.actor.createTrade(arg0, arg1, to_candid_TradeType_n12(this._uploadFile, this._downloadFile, arg2), arg3, arg4, arg5, arg6, to_candid_TradeResult_n14(this._uploadFile, this._downloadFile, arg7), arg8, arg9, to_candid_opt_n16(this._uploadFile, this._downloadFile, arg10), arg11, arg12);
             return result;
         }
     }
@@ -805,6 +809,7 @@ function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uin
     id: _TradeId;
     result: _TradeResult;
     screenshotFileId: [] | [string];
+    tradeTime: _TradeTime;
     tradeType: _TradeType;
     emotion: string;
     owner: Principal;
@@ -814,11 +819,13 @@ function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uin
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: _Timeframe;
     entryPrice: number;
 }): {
     id: TradeId;
     result: TradeResult;
     screenshotFileId?: string;
+    tradeTime: TradeTime;
     tradeType: TradeType;
     emotion: string;
     owner: Principal;
@@ -828,12 +835,14 @@ function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uin
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: Timeframe;
     entryPrice: number;
 } {
     return {
         id: value.id,
         result: from_candid_TradeResult_n25(_uploadFile, _downloadFile, value.result),
         screenshotFileId: record_opt_to_undefined(from_candid_opt_n27(_uploadFile, _downloadFile, value.screenshotFileId)),
+        tradeTime: value.tradeTime,
         tradeType: from_candid_TradeType_n28(_uploadFile, _downloadFile, value.tradeType),
         emotion: value.emotion,
         owner: value.owner,
@@ -843,6 +852,7 @@ function from_candid_record_n24(_uploadFile: (file: ExternalBlob) => Promise<Uin
         rrAchieved: value.rrAchieved,
         stopLoss: value.stopLoss,
         notes: value.notes,
+        entryTimeframe: value.entryTimeframe,
         entryPrice: value.entryPrice
     };
 }
@@ -980,6 +990,7 @@ function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     id: TradeId;
     result: TradeResult;
     screenshotFileId?: string;
+    tradeTime: TradeTime;
     tradeType: TradeType;
     emotion: string;
     owner: Principal;
@@ -989,11 +1000,13 @@ function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: Timeframe;
     entryPrice: number;
 }): {
     id: _TradeId;
     result: _TradeResult;
     screenshotFileId: [] | [string];
+    tradeTime: _TradeTime;
     tradeType: _TradeType;
     emotion: string;
     owner: Principal;
@@ -1003,12 +1016,14 @@ function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: _Timeframe;
     entryPrice: number;
 } {
     return {
         id: value.id,
         result: to_candid_TradeResult_n14(_uploadFile, _downloadFile, value.result),
         screenshotFileId: value.screenshotFileId ? candid_some(value.screenshotFileId) : candid_none(),
+        tradeTime: value.tradeTime,
         tradeType: to_candid_TradeType_n12(_uploadFile, _downloadFile, value.tradeType),
         emotion: value.emotion,
         owner: value.owner,
@@ -1018,6 +1033,7 @@ function to_candid_record_n36(_uploadFile: (file: ExternalBlob) => Promise<Uint8
         rrAchieved: value.rrAchieved,
         stopLoss: value.stopLoss,
         notes: value.notes,
+        entryTimeframe: value.entryTimeframe,
         entryPrice: value.entryPrice
     };
 }

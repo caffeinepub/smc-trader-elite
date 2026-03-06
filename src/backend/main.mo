@@ -36,6 +36,9 @@ actor {
     #ny;
   };
 
+  type Timeframe = Text; // E.g. "M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"
+  type TradeTime = Text; // Time of trade entry as Text, e.g. "14:30"
+
   type Trade = {
     id : TradeId;
     owner : Principal;
@@ -50,6 +53,8 @@ actor {
     emotion : Text;
     notes : Text;
     screenshotFileId : ?Text;
+    entryTimeframe : Timeframe; // New field for entry timeframe
+    tradeTime : TradeTime; // New field for trade entry time
   };
 
   type PlaybookEntry = {
@@ -114,6 +119,8 @@ actor {
     emotion : Text,
     notes : Text,
     screenshotFileId : ?Text,
+    entryTimeframe : Timeframe,
+    tradeTime : TradeTime,
   ) : async TradeId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can create trades");
@@ -134,6 +141,8 @@ actor {
       emotion;
       notes;
       screenshotFileId;
+      entryTimeframe;
+      tradeTime;
     };
     trades.add(id, trade);
     nextTradeId += 1;

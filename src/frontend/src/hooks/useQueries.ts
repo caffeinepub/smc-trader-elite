@@ -156,6 +156,8 @@ export function useCreateTrade() {
       emotion: string;
       notes: string;
       screenshotFileId: string | null;
+      entryTimeframe: string;
+      tradeTime: string;
     }) => {
       if (!actor) throw new Error("Not connected");
       return actor.createTrade(
@@ -170,6 +172,8 @@ export function useCreateTrade() {
         params.emotion,
         params.notes,
         params.screenshotFileId,
+        params.entryTimeframe,
+        params.tradeTime,
       );
     },
     onSuccess: () => {
@@ -261,6 +265,43 @@ export function useDeletePlaybookEntry() {
     mutationFn: async (id: bigint) => {
       if (!actor) throw new Error("Not connected");
       return actor.deletePlaybookEntry(id);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["playbookEntries"] });
+    },
+  });
+}
+
+// ─── Update Mutations ─────────────────────────────────────────────────────────
+
+export function useUpdateTrade() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (trade: import("../backend.d").Trade) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.updateTrade(trade);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["trades"] });
+      void queryClient.invalidateQueries({ queryKey: ["winRate"] });
+      void queryClient.invalidateQueries({ queryKey: ["averageRR"] });
+      void queryClient.invalidateQueries({ queryKey: ["countTradeResults"] });
+      void queryClient.invalidateQueries({ queryKey: ["longestWinStreak"] });
+      void queryClient.invalidateQueries({ queryKey: ["longestLossStreak"] });
+      void queryClient.invalidateQueries({ queryKey: ["winningPairs"] });
+      void queryClient.invalidateQueries({ queryKey: ["losingPairs"] });
+    },
+  });
+}
+
+export function useUpdatePlaybookEntry() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (entry: import("../backend.d").PlaybookEntry) => {
+      if (!actor) throw new Error("Not connected");
+      return actor.updatePlaybookEntry(entry);
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["playbookEntries"] });

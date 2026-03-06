@@ -7,12 +7,13 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export type PlaybookEntryId = bigint;
+export type TradeTime = string;
 export type TradeId = bigint;
 export interface Trade {
     id: TradeId;
     result: TradeResult;
     screenshotFileId?: string;
+    tradeTime: TradeTime;
     tradeType: TradeType;
     emotion: string;
     owner: Principal;
@@ -22,6 +23,7 @@ export interface Trade {
     rrAchieved: number;
     stopLoss: number;
     notes: string;
+    entryTimeframe: Timeframe;
     entryPrice: number;
 }
 export interface PlaybookEntry {
@@ -38,6 +40,7 @@ export interface PlaybookEntry {
     rrTarget: number;
     entryConfirmation: string;
 }
+export type Timeframe = string;
 export interface UserProfile {
     bio: string;
     tradingStyle: string;
@@ -45,6 +48,7 @@ export interface UserProfile {
     createdAt: bigint;
     accountCurrency: string;
 }
+export type PlaybookEntryId = bigint;
 export enum Session {
     ny = "ny",
     asia = "asia",
@@ -72,7 +76,7 @@ export interface backendInterface {
     calculateWinRate(): Promise<number>;
     countTradeResults(): Promise<[bigint, bigint, bigint]>;
     createPlaybookEntry(pair: string, session: Session, htfBias: string, marketStructure: string, liquidityTarget: string, poi: string, entryConfirmation: string, rrTarget: number, qualityScore: bigint): Promise<PlaybookEntryId>;
-    createTrade(date: string, pair: string, tradeType: TradeType, entryPrice: number, stopLoss: number, takeProfit: number, rrAchieved: number, result: TradeResult, emotion: string, notes: string, screenshotFileId: string | null): Promise<TradeId>;
+    createTrade(date: string, pair: string, tradeType: TradeType, entryPrice: number, stopLoss: number, takeProfit: number, rrAchieved: number, result: TradeResult, emotion: string, notes: string, screenshotFileId: string | null, entryTimeframe: Timeframe, tradeTime: TradeTime): Promise<TradeId>;
     deletePlaybookEntry(id: PlaybookEntryId): Promise<void>;
     deleteTrade(id: TradeId): Promise<void>;
     getAllPlaybookEntries(): Promise<Array<PlaybookEntry>>;

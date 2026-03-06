@@ -28,10 +28,12 @@ export type PlaybookEntryId = bigint;
 export type Session = { 'ny' : null } |
   { 'asia' : null } |
   { 'london' : null };
+export type Timeframe = string;
 export interface Trade {
   'id' : TradeId,
   'result' : TradeResult,
   'screenshotFileId' : [] | [string],
+  'tradeTime' : TradeTime,
   'tradeType' : TradeType,
   'emotion' : string,
   'owner' : Principal,
@@ -41,12 +43,14 @@ export interface Trade {
   'rrAchieved' : number,
   'stopLoss' : number,
   'notes' : string,
+  'entryTimeframe' : Timeframe,
   'entryPrice' : number,
 }
 export type TradeId = bigint;
 export type TradeResult = { 'be' : null } |
   { 'win' : null } |
   { 'loss' : null };
+export type TradeTime = string;
 export type TradeType = { 'buy' : null } |
   { 'sell' : null };
 export interface UserProfile {
@@ -110,6 +114,8 @@ export interface _SERVICE {
       string,
       string,
       [] | [string],
+      Timeframe,
+      TradeTime,
     ],
     TradeId
   >,

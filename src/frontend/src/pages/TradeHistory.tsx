@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Clock,
   History,
   Minus,
   Search,
@@ -233,11 +234,22 @@ export default function TradeHistory() {
                                 {resultCfg.label}
                               </span>
                             )}
+                            {trade.entryTimeframe && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-md bg-muted/50 text-muted-foreground border border-border/30">
+                                {trade.entryTimeframe}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <span className="text-xs text-muted-foreground/70 font-body">
                               {trade.date}
                             </span>
+                            {trade.tradeTime && (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground/60 font-mono">
+                                <Clock className="w-3 h-3 text-muted-foreground/40" />
+                                {trade.tradeTime}
+                              </span>
+                            )}
                             {trade.notes && (
                               <span className="text-[10px] text-muted-foreground/50 font-body truncate max-w-32">
                                 {trade.notes}

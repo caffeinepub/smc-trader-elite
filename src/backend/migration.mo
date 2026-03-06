@@ -1,7 +1,5 @@
 import Map "mo:core/Map";
-import Float "mo:core/Float";
 import Nat "mo:core/Nat";
-import Int "mo:core/Int";
 import Principal "mo:core/Principal";
 
 module {
@@ -25,6 +23,33 @@ module {
     #ny;
   };
 
+  type Timeframe = Text;
+  type TradeTime = Text;
+
+  type OldTrade = {
+    id : TradeId;
+    owner : Principal;
+    date : Text;
+    pair : Text;
+    tradeType : TradeType;
+    entryPrice : Float;
+    stopLoss : Float;
+    takeProfit : Float;
+    rrAchieved : Float;
+    result : TradeResult;
+    emotion : Text;
+    notes : Text;
+    screenshotFileId : ?Text;
+  };
+
+  type OldActor = {
+    trades : Map.Map<TradeId, OldTrade>;
+    playbookEntries : Map.Map<PlaybookEntryId, PlaybookEntry>;
+    userProfiles : Map.Map<Principal, UserProfile>;
+    nextTradeId : Nat;
+    nextPlaybookEntryId : Nat;
+  };
+
   type Trade = {
     id : TradeId;
     owner : Principal;
@@ -39,6 +64,8 @@ module {
     emotion : Text;
     notes : Text;
     screenshotFileId : ?Text;
+    entryTimeframe : Timeframe;
+    tradeTime : TradeTime;
   };
 
   type PlaybookEntry = {
@@ -64,42 +91,6 @@ module {
     createdAt : Int;
   };
 
-  type OldTrade = {
-    id : TradeId;
-    date : Text;
-    pair : Text;
-    tradeType : TradeType;
-    entryPrice : Float;
-    stopLoss : Float;
-    takeProfit : Float;
-    rrAchieved : Float;
-    result : TradeResult;
-    emotion : Text;
-    notes : Text;
-    screenshotFileId : ?Text;
-  };
-
-  type OldPlaybookEntry = {
-    id : PlaybookEntryId;
-    pair : Text;
-    session : Session;
-    htfBias : Text;
-    marketStructure : Text;
-    liquidityTarget : Text;
-    poi : Text;
-    entryConfirmation : Text;
-    rrTarget : Float;
-    qualityScore : Nat;
-    createdAt : Int;
-  };
-
-  type OldActor = {
-    trades : Map.Map<TradeId, OldTrade>;
-    playbookEntries : Map.Map<PlaybookEntryId, OldPlaybookEntry>;
-    nextTradeId : Nat;
-    nextPlaybookEntryId : Nat;
-  };
-
   type NewActor = {
     trades : Map.Map<TradeId, Trade>;
     playbookEntries : Map.Map<PlaybookEntryId, PlaybookEntry>;
@@ -111,21 +102,13 @@ module {
   public func run(old : OldActor) : NewActor {
     let newTrades = old.trades.map<TradeId, OldTrade, Trade>(
       func(_id, oldTrade) {
-        { oldTrade with owner = Principal.anonymous() };
-      }
-    );
-
-    let newPlaybookEntries = old.playbookEntries.map<PlaybookEntryId, OldPlaybookEntry, PlaybookEntry>(
-      func(_id, oldEntry) {
-        { oldEntry with owner = Principal.anonymous() };
+        { oldTrade with entryTimeframe = ""; tradeTime = "" };
       }
     );
 
     {
       old with
-      trades = newTrades;
-      playbookEntries = newPlaybookEntries;
-      userProfiles = Map.empty<Principal, UserProfile>();
+      trades = newTrades
     };
   };
 };
